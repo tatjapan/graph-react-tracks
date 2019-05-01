@@ -1,13 +1,41 @@
 import React from "react";
 import withStyles from "@material-ui/core/styles/withStyles";
-// import AppBar from "@material-ui/core/AppBar";
-// import Toolbar from "@material-ui/core/Toolbar";
-// import RadioIcon from "@material-ui/icons/RadioTwoTone";
-// import FaceIcon from "@material-ui/icons/FaceTwoTone";
-// import Typography from "@material-ui/core/Typography";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import RadioIcon from "@material-ui/icons/RadioTwoTone";
+import FaceIcon from "@material-ui/icons/FaceTwoTone";
+import Typography from "@material-ui/core/Typography";
+import { Link } from 'react-router-dom';
 
-const Header = ({ classes }) => {
-  return <div>Header</div>;
+import Signout from '../Auth/Signout';
+
+const Header = ({ classes, currentUser }) => {
+  return (
+    <AppBar position="static" className={classes.root}>
+      <Toolbar>
+        {/* Title and logo */}
+        <Link to="/" className={classes.grow}>
+          <RadioIcon className={classes.logo} color='secondary' />
+          <Typography variant="headline" color="secondary" noWrap>
+            Trackgram
+          </Typography>
+        </Link>
+
+        {/* Auth user info */}
+        {currentUser && (
+          <Link to={`/profile/${currentUser.id}`} className={classes.grow}>
+            <FaceIcon className={classes.faceIcon} />
+            <Typography variant="headline" className={classes.username} noWrap>
+              {currentUser.username}
+            </Typography>
+          </Link>
+        )}
+
+        {/* Signout */}
+        <Signout />
+      </Toolbar>
+    </AppBar>
+  );
 };
 
 const styles = theme => ({

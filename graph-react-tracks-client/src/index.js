@@ -9,6 +9,17 @@ import Auth from './components/Auth';
 
 const client = new ApolloClient({
     uri: 'http://localhost:8000/graphql/',
+    fetchOptions: {
+        credentials: "include"
+    },
+    request: operation => {
+        const token = localStorage.getItem('authToken') || ""
+        operation.setContext({
+            headers: {
+                Authorization: `JWT ${token}`
+            }
+        })
+    },
     clientState: {
         defaults: {
             isLoggedIn: !!localStorage.getItem('authToken')
