@@ -1,22 +1,184 @@
-import React from "react";
+import React, { useState } from "react";
+import { Mutation } from 'react-apollo';
+import { gql } from 'apollo-boost';
+import axios from 'axios';
 import withStyles from "@material-ui/core/styles/withStyles";
-// import Dialog from "@material-ui/core/Dialog";
-// import DialogActions from "@material-ui/core/DialogActions";
-// import DialogContent from "@material-ui/core/DialogContent";
-// import DialogContentText from "@material-ui/core/DialogContentText";
-// import DialogTitle from "@material-ui/core/DialogTitle";
-// import FormControl from "@material-ui/core/FormControl";
-// import FormHelperText from "@material-ui/core/FormHelperText";
-// import TextField from "@material-ui/core/TextField";
-// import Button from "@material-ui/core/Button";
-// import CircularProgress from "@material-ui/core/CircularProgress";
-// import AddIcon from "@material-ui/icons/Add";
-// import ClearIcon from "@material-ui/icons/Clear";
-// import LibraryMusicIcon from "@material-ui/icons/LibraryMusic";
+import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogContentText from "@material-ui/core/DialogContentText";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import FormControl from "@material-ui/core/FormControl";
+import FormHelperText from "@material-ui/core/FormHelperText";
+import TextField from "@material-ui/core/TextField";
+import Button from "@material-ui/core/Button";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import AddIcon from "@material-ui/icons/Add";
+import ClearIcon from "@material-ui/icons/Clear";
+import LibraryMusicIcon from "@material-ui/icons/LibraryMusic";
+
+import Error from '../Shared/Error';
+
 
 const CreateTrack = ({ classes }) => {
-  return <div>CreateTrack</div>;
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [hashtag, setHashtag] = useState("");
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleAudioChange = event => {
+    const selectedFile = event.target.files[0]
+    setFile(selectedFile)
+  }
+
+  const handleAudioUpload = async () => {
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      data.append('resource_type', 'raw');
+      data.append('upload_preset', 'trackgram');
+      data.append('cloud_name', 'tatjapan');
+      const res = await axios.post("https://api.cloudinary.com/v1_1/tatjapan/raw/upload", data);
+      return res.data.url;
+    } catch (err) {
+      console.error('ファイルアップロード中にエラーが発生しました。', err);
+      setSubmitting(false);
+    }
+    
+  };
+
+  const handleSubmit = async (event, createTrack) => {
+    event.preventDefault();
+    setSubmitting(true);
+    // ファイルをアップロードしてCloudinaryのAPIからURL取得
+    const uploadedUrl = await handleAudioUpload();
+    createTrack({ variables: { title, hashtag, description, url: uploadedUrl }});
+  };
+
+  return (
+    <>
+    {/* create track button */}
+    <Button onClick={() => setOpen(true)} variant="fab" className={classes.fab} color="secondary">
+      {open ? <ClearIcon /> : <AddIcon />}
+    </Button>
+
+    {/* create track DIALOG */}
+    <Mutation 
+      mutation={CREATE_TRACK_MUTATION}
+      onCompleted={data => {
+        console.log({data})
+        setSubmitting(false)
+        setOpen(false)
+      }}
+    >
+      {(createTrack, { loading, error }) => {
+        if (error) return <Error error={error} />;
+
+        return (
+            <Dialog open={open} className={classes.dialog}>
+              <form onSubmit={event => handleSubmit(event, createTrack)}>
+                <DialogTitle>Create Track</DialogTitle>
+                <DialogContent>
+                  <DialogContentText>
+                    音楽ファイルにタイトルと説明、ハッシュタグを追加
+                  </DialogContentText>
+                  <FormControl fullWidth>
+                    <TextField
+                      label="タイトル"
+                      placeholder="タイトルを追加"
+                      onChange={event => setTitle(event.target.value)}
+                      className={classes.textField}
+                    />
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <TextField
+                      multiline
+                      rows="3"
+                      label="説明"
+                      placeholder="説明を追加"
+                      onChange={event => setDescription(event.target.value)}
+                      className={classes.textField}
+                    />
+                  </FormControl>
+
+                <FormControl fullWidth>
+                  <TextField
+                    multiline
+                    rows="3"
+                    label="ハッシュタグ"
+                    placeholder="ハッシュタグを追加（e.g. #music）"
+                    onChange={event => setHashtag(event.target.value)}
+                    className={classes.textField}
+                  />
+                </FormControl>
+
+                  <FormControl>
+                    <input
+                      id="audio"
+                      required
+                      type="file"
+                      accept="audio"
+                      className={classes.input}
+                      onChange={handleAudioChange}
+                    />
+                    <label htmlFor="audio">
+                      <Button variant="outlined" color={file ? "secondary" : "inherit"}
+                        component="span" className={classes.button}
+                      >
+                        音楽ファイル
+                        <LibraryMusicIcon className={classes.icon} />
+                      </Button>
+                      {file && file.name}
+                    </label>
+                  </FormControl>
+                </DialogContent>
+                <DialogActions>
+                  <Button
+                    disabled={submitting}
+                    onClick={() => setOpen(false)}
+                    className={classes.cancel}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    disabled={
+                      submitting || !title.trim() || !description.trim() || !file
+                    }
+                    type="submit"
+                    className={classes.save}
+                  >
+                    {submitting ? (
+                      <CircularProgress className={classes.save} size={24} />
+                    ) : ( "トラックを追加" )}
+                  </Button>
+                </DialogActions>
+              </form>
+            </Dialog>  
+        )
+      }} 
+    </Mutation>
+    
+    </>
+  );
 };
+
+const CREATE_TRACK_MUTATION = gql`
+  mutation ($title: String!, $description: String!, $hashtag: String!, $url: String!) {
+    createTrack(title: $title, description: $description, hashtag: $hashtag, url: $url) 
+    {
+      track {
+        id
+        title
+        description
+        hashtag
+        url
+      }
+    }
+  }
+`;
 
 const styles = theme => ({
   container: {
