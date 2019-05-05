@@ -17,6 +17,7 @@ import AddIcon from "@material-ui/icons/Add";
 import ClearIcon from "@material-ui/icons/Clear";
 import LibraryMusicIcon from "@material-ui/icons/LibraryMusic";
 
+import { GET_TRACKS_QUERY } from '../../pages/App';
 import Error from '../Shared/Error';
 
 
@@ -27,10 +28,17 @@ const CreateTrack = ({ classes }) => {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [fileError, setFileError] = useState("");
 
   const handleAudioChange = event => {
     const selectedFile = event.target.files[0]
-    setFile(selectedFile)
+    const fileSizeLimit = 15000000;
+    if (selectedFile && selectedFile.size > fileSizeLimit) {
+        setFileError(`${selectedFile.name}: アップロードできるファイルサイズは15MBが上限です。`)
+    } else {
+      setFile(selectedFile);
+      setFileError('');
+    }
   }
 
   const handleAudioUpload = async () => {
@@ -71,7 +79,12 @@ const CreateTrack = ({ classes }) => {
         console.log({data})
         setSubmitting(false)
         setOpen(false)
+        setTitle("")
+        setDescription("")
+        setHashtag("")
+        setFile("")
       }}
+      refetchQueries={() => [{ query: GET_TRACKS_QUERY }]}
     >
       {(createTrack, { loading, error }) => {
         if (error) return <Error error={error} />;
@@ -89,6 +102,7 @@ const CreateTrack = ({ classes }) => {
                       label="タイトル"
                       placeholder="タイトルを追加"
                       onChange={event => setTitle(event.target.value)}
+                      value={title}
                       className={classes.textField}
                     />
                   </FormControl>
@@ -100,6 +114,7 @@ const CreateTrack = ({ classes }) => {
                       label="説明"
                       placeholder="説明を追加"
                       onChange={event => setDescription(event.target.value)}
+                      value={description}
                       className={classes.textField}
                     />
                   </FormControl>
@@ -111,11 +126,12 @@ const CreateTrack = ({ classes }) => {
                     label="ハッシュタグ"
                     placeholder="ハッシュタグを追加（e.g. #music）"
                     onChange={event => setHashtag(event.target.value)}
+                    value={hashtag}
                     className={classes.textField}
                   />
                 </FormControl>
 
-                  <FormControl>
+                  <FormControl error={Boolean(fileError)}>
                     <input
                       id="audio"
                       required
@@ -128,10 +144,11 @@ const CreateTrack = ({ classes }) => {
                       <Button variant="outlined" color={file ? "secondary" : "inherit"}
                         component="span" className={classes.button}
                       >
-                        音楽ファイル
+                        音楽ファイル(最大15MBまで)
                         <LibraryMusicIcon className={classes.icon} />
                       </Button>
                       {file && file.name}
+                      <FormHelperText>{fileError}</FormHelperText>
                     </label>
                   </FormControl>
                 </DialogContent>

@@ -43,6 +43,7 @@ const TrackList = ({ classes, tracks }) => (
         </ExpansionPanelSummary>
         <ExpansionPanelDetails className={classes.details}>
           <Typography variant="body1">{track.description}</Typography>
+          <Typography variant="body1">{track.hashtag}</Typography>
         </ExpansionPanelDetails>
         <ExpansionPanelActions>
           <UpdateTrack track={track} />
