@@ -6,7 +6,6 @@ from graphene_django import DjangoObjectType
 class UserType(DjangoObjectType):
     class Meta:
         model = get_user_model()
-        only_fields = ('id', 'username', 'email', 'password')
 
 class Query(graphene.ObjectType):
     user = graphene.Field(UserType, id=graphene.Int(required=True))

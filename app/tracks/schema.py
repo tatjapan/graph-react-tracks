@@ -11,9 +11,11 @@ class TrackType(DjangoObjectType):
     class Meta:
         model = Track
 
+
 class LikeType(DjangoObjectType):
     class Meta:
         model = Like
+
 
 class Query(graphene.ObjectType):
     tracks = graphene.List(TrackType, search=graphene.String())
@@ -107,7 +109,6 @@ class CreateLike(graphene.Mutation):
 
     def mutate(self, info, track_id):
         user = info.context.user
-
         if user.is_anonymous:
             raise GraphQLError("ログイン後にLikeできます。")
 
